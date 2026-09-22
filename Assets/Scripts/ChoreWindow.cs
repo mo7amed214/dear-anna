@@ -68,7 +68,7 @@ public class ChoreWindow : MonoBehaviour
 
         if (startMessageTimer > 0f) startMessageTimer -= Time.deltaTime;
 
-        if (hitThis && Mouse.current != null && Mouse.current.leftButton.isPressed)
+        if (hitThis && GameState.AnnaLetterRead && Mouse.current != null && Mouse.current.leftButton.isPressed)
         {
             if (!started)
             {
@@ -154,7 +154,7 @@ public class ChoreWindow : MonoBehaviour
             GUI.Label(new Rect(Screen.width / 2 - 220, Screen.height - 45, 440, 30),
                 "The glass has gone grey with soot and cold.", PaperUtil.PromptStyle());
         }
-        else if (lookingAtWindow && !started)
+        else if (lookingAtWindow && !started && GameState.AnnaLetterRead)
         {
             GUI.Label(new Rect(Screen.width / 2 - 220, Screen.height - 45, 440, 30),
                 "Hold click and look around to wipe the glass clean", PaperUtil.PromptStyle());

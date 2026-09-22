@@ -48,3 +48,7 @@ crashlytics-build.properties
 # Editor tooling
 .vscode/
 .idea/
+
+# Unity auto-generated crash-recovery scene backups
+/Assets/_Recovery/
+/Assets/_Recovery.meta

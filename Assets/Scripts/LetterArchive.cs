@@ -121,9 +121,11 @@ public class LetterArchive : MonoBehaviour
             GUI.Label(new Rect(panel.x + 35, panel.y + 20, panel.width - 70, 25), e.title, PaperUtil.GreetingStyle());
 
             Rect viewRect = new Rect(panel.x + 35, panel.y + 55, panel.width - 70, panel.height - 135);
-            Rect contentRect = new Rect(0, 0, viewRect.width - 20, 720);
+            GUIStyle bodyStyle = PaperUtil.InkStyle(16);
+            float textHeight = bodyStyle.CalcHeight(new GUIContent(e.body), viewRect.width - 20);
+            Rect contentRect = new Rect(0, 0, viewRect.width - 20, Mathf.Max(viewRect.height, textHeight + 20));
             readScroll = GUI.BeginScrollView(viewRect, readScroll, contentRect);
-            GUI.Label(new Rect(0, 0, contentRect.width, contentRect.height), e.body, PaperUtil.InkStyle(16));
+            GUI.Label(new Rect(0, 0, contentRect.width, contentRect.height), e.body, bodyStyle);
             GUI.EndScrollView();
 
             if (PaperUtil.FlatButton(new Rect(panel.x + panel.width / 2f - 75, panel.y + panel.height - 50, 150, 36), "Back to list"))
