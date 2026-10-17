@@ -18,6 +18,8 @@ public class LetterArchive : MonoBehaviour
 
     void Update()
     {
+        if (GameState.IsDreaming) return;
+
         if (Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame)
         {
             if (!isOpen && !GameState.IsUIOpen)
@@ -76,7 +78,10 @@ public class LetterArchive : MonoBehaviour
         PaperUtil.EnsureNoScrollbarHover();
         if (!isOpen)
         {
-            GUI.Label(new Rect(Screen.width - 230, 16, 210, 22), "Press L to open your letters", PaperUtil.HintStyle(13));
+            if (!GameState.IsDreaming)
+            {
+                GUI.Label(new Rect(Screen.width - 230, 16, 210, 22), "Press L to open your letters", PaperUtil.HintStyle(13));
+            }
             return;
         }
 
@@ -118,10 +123,11 @@ public class LetterArchive : MonoBehaviour
         else
         {
             var e = GameState.Archive[openIndex];
-            GUI.Label(new Rect(panel.x + 35, panel.y + 20, panel.width - 70, 25), e.title, PaperUtil.GreetingStyle());
+            GUIStyle titleStyle = e.incoming ? PaperUtil.InLetterFont(PaperUtil.GreetingStyle(21)) : PaperUtil.GreetingStyle();
+            GUI.Label(new Rect(panel.x + 35, panel.y + 18, panel.width - 70, 30), e.title, titleStyle);
 
             Rect viewRect = new Rect(panel.x + 35, panel.y + 55, panel.width - 70, panel.height - 135);
-            GUIStyle bodyStyle = PaperUtil.InkStyle(16);
+            GUIStyle bodyStyle = e.incoming ? PaperUtil.InLetterFont(PaperUtil.InkStyle(19)) : PaperUtil.InkStyle(16);
             float textHeight = bodyStyle.CalcHeight(new GUIContent(e.body), viewRect.width - 20);
             Rect contentRect = new Rect(0, 0, viewRect.width - 20, Mathf.Max(viewRect.height, textHeight + 20));
             readScroll = GUI.BeginScrollView(viewRect, readScroll, contentRect);

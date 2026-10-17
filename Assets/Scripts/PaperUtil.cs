@@ -33,6 +33,33 @@ public static class PaperUtil
 
     static readonly Color Ink = new Color(0.22f, 0.16f, 0.1f);
 
+    // Konstruktor -- the single typeface for every line of in-game text. Loaded from
+    // Resources so no scene object has to hold a reference to it. Glyphs it lacks
+    // (brackets, '|', ';', '/', ellipsis) fall back to the OS font automatically.
+    private static Font gameFont;
+
+    public static Font GameFont
+    {
+        get
+        {
+            if (gameFont == null) gameFont = Resources.Load<Font>("Fonts/KonstruktorRegular");
+            return gameFont;
+        }
+    }
+
+    // Svetze -- used for everything inside a letter Stanislav receives (title, body, hint),
+    // so Anna's letters read as her own hand rather than the game's UI typeface.
+    private static Font letterFont;
+
+    public static Font LetterFont
+    {
+        get
+        {
+            if (letterFont == null) letterFont = Resources.Load<Font>("Fonts/Svetze");
+            return letterFont;
+        }
+    }
+
     // Forces every single interaction state (not just "normal") to the same color,
     // so it is structurally impossible for this text to display any other color
     // under any circumstance -- hover, active, focus, or otherwise.
@@ -51,31 +78,40 @@ public static class PaperUtil
 
     public static GUIStyle InkStyle(int fontSize = 18)
     {
-        GUIStyle s = new GUIStyle(GUI.skin.label) { fontSize = fontSize, wordWrap = true, alignment = TextAnchor.UpperLeft };
+        GUIStyle s = new GUIStyle(GUI.skin.label) { font = GameFont, fontSize = fontSize, wordWrap = true, alignment = TextAnchor.UpperLeft };
         return LockedColor(s, Ink);
+    }
+
+    // Any of the paper styles re-set in the received-letter typeface. Italic is dropped: a
+    // handwritten face already slants, and Unity's faked italic on top of it looks smeared.
+    public static GUIStyle InLetterFont(GUIStyle s)
+    {
+        s.font = LetterFont;
+        s.fontStyle = FontStyle.Normal;
+        return s;
     }
 
     public static GUIStyle GreetingStyle(int fontSize = 17)
     {
-        GUIStyle s = new GUIStyle(GUI.skin.label) { fontSize = fontSize, fontStyle = FontStyle.Italic };
+        GUIStyle s = new GUIStyle(GUI.skin.label) { font = GameFont, fontSize = fontSize, fontStyle = FontStyle.Italic };
         return LockedColor(s, Ink);
     }
 
     public static GUIStyle SignatureStyle(int fontSize = 17)
     {
-        GUIStyle s = new GUIStyle(GUI.skin.label) { fontSize = fontSize, fontStyle = FontStyle.Italic, alignment = TextAnchor.MiddleRight };
+        GUIStyle s = new GUIStyle(GUI.skin.label) { font = GameFont, fontSize = fontSize, fontStyle = FontStyle.Italic, alignment = TextAnchor.MiddleRight };
         return LockedColor(s, Ink);
     }
 
     public static GUIStyle HintStyle(int fontSize = 12)
     {
-        GUIStyle s = new GUIStyle(GUI.skin.label) { fontSize = fontSize };
+        GUIStyle s = new GUIStyle(GUI.skin.label) { font = GameFont, fontSize = fontSize };
         return LockedColor(s, new Color(0.35f, 0.28f, 0.2f));
     }
 
     public static GUIStyle PromptStyle(int fontSize = 16)
     {
-        GUIStyle s = new GUIStyle(GUI.skin.label) { fontSize = fontSize, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+        GUIStyle s = new GUIStyle(GUI.skin.label) { font = GameFont, fontSize = fontSize, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         return LockedColor(s, new Color(0.95f, 0.72f, 0.25f)); // warm gold, not white
     }
 
@@ -133,7 +169,7 @@ public static class PaperUtil
         if (flatBorderTex == null) flatBorderTex = SolidTexture(new Color(0.32f, 0.24f, 0.15f));
         if (flatTextStyle == null)
         {
-            flatTextStyle = new GUIStyle(GUI.skin.label) { fontSize = fontSize, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            flatTextStyle = new GUIStyle(GUI.skin.label) { font = GameFont, fontSize = fontSize, alignment = TextAnchor.MiddleCenter, wordWrap = true };
             flatTextStyle.normal.textColor = Ink;
         }
         if (flatTextHoverStyle == null)

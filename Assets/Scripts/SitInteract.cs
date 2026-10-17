@@ -63,6 +63,12 @@ public class SitInteract : MonoBehaviour
         player.transform.position = transform.position + seatWorldOffset;
         player.transform.rotation = Quaternion.Euler(seatFacingEuler);
 
+        // CM_Seated is parented under Player with a fixed local offset, the same way
+        // CM_FirstPerson is -- it tracks the player's new seated position and yaw
+        // automatically, and its own CinemachinePanTilt keeps mouse-look working while
+        // seated, so there is nothing left to position here.
+        if (CameraRig.Instance != null) CameraRig.Instance.ShowSeated();
+
         isSitting = true;
     }
 
@@ -76,13 +82,15 @@ public class SitInteract : MonoBehaviour
         if (cc != null) cc.enabled = true;
         if (fpm != null) fpm.canMove = true;
 
+        if (CameraRig.Instance != null) CameraRig.Instance.ShowFirstPerson();
+
         isSitting = false;
     }
 
     void EnsureStyles()
     {
         if (standStyle != null) return;
-        standStyle = new GUIStyle(GUI.skin.box) { fontSize = 20, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+        standStyle = new GUIStyle(GUI.skin.box) { font = PaperUtil.GameFont, fontSize = 20, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         standStyle.normal.textColor = Color.white;
     }
 

@@ -12,7 +12,6 @@ public class FirstPersonMove : MonoBehaviour
     [HideInInspector] public bool canLook = true;
 
     private CharacterController controller;
-    private float pitch;
     private float verticalVelocity;
 
     void Awake()
@@ -48,20 +47,18 @@ public class FirstPersonMove : MonoBehaviour
         }
     }
 
+    // Yaw (horizontal look) still rotates the player body directly, since HandleMove()
+    // derives its WASD direction from this same transform -- turning the body this way is
+    // what keeps "forward" meaning "the way I'm facing" for movement. Pitch (vertical look)
+    // is no longer set here: it's owned by CinemachineLookInput/CinemachinePanTilt on the
+    // first-person CinemachineCamera, which inherits this yaw automatically by being a child
+    // of this transform, the same way cameraTransform always was.
     void HandleLook()
     {
         if (Mouse.current == null) return;
 
         Vector2 delta = Mouse.current.delta.ReadValue() * mouseSensitivity;
-
         transform.Rotate(Vector3.up * delta.x);
-
-        pitch -= delta.y;
-        pitch = Mathf.Clamp(pitch, -80f, 80f);
-        if (cameraTransform != null)
-        {
-            cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
-        }
     }
 
     void HandleMove()

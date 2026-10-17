@@ -30,6 +30,9 @@ public class MusicPlayer : MonoBehaviour
 
     void Update()
     {
+        // No gramophone in a dream.
+        if (GameState.IsDreaming) { lookingAtPlayer = false; return; }
+
         Camera cam = Camera.main;
         if (cam == null) return;
 
@@ -50,6 +53,19 @@ public class MusicPlayer : MonoBehaviour
             NextTrack();
         }
         wasPlaying = audioSource.isPlaying;
+    }
+
+    // Called when going to sleep -- the gramophone, record and all, has no place in the dream.
+    public void StopForSleep()
+    {
+        audioSource.Stop();
+        if (anim != null) anim.Stop();
+
+        // Update() stops ticking messageTimer down the instant GameState.IsDreaming flips on
+        // (it returns early, before that line runs at all), so a "Now playing" message that
+        // was still up when sleep started would otherwise freeze on screen for the whole dream.
+        messageTimer = 0f;
+        message = "";
     }
 
     void NextTrack()
@@ -73,6 +89,8 @@ public class MusicPlayer : MonoBehaviour
 
     void OnGUI()
     {
+        if (GameState.IsDreaming) return; // no gramophone in a dream -- see Update()
+
         if (lookingAtPlayer && !GameState.IsUIOpen)
         {
             string hint = currentTrack < 0 ? "Click to wind the gramophone" : "Click to change the record";

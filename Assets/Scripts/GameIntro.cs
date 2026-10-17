@@ -9,6 +9,13 @@ public class GameIntro : MonoBehaviour
     public AudioClip[] letterAudioParts;
     public Texture2D bloodySundayImage;
 
+    // Assigned in the inspector: the physical envelope prop (EnvelopeRoot prefab) and the
+    // art used for its reading panel -- the illegible handwritten scan, and the parchment
+    // background the English translation is written over.
+    public GameObject envelopePrefab;
+    public Texture2D annaLetterPaper;
+    public Texture2D translationParchment;
+
     private const string AnnaTitle = "From Anna";
 
     private static readonly string AnnaLetter =
@@ -24,10 +31,11 @@ public class GameIntro : MonoBehaviour
     private bool letterArrived;
     private bool isReading;
     private float timer;
-    private Vector2 scroll;
+
+    private EnvelopeLetter envelope;
+    private readonly LetterReaderUI.ReaderState readerState = new LetterReaderUI.ReaderState();
 
     private FirstPersonMove fpm;
-    private Texture2D paperTexture;
 
     private AudioSource audioSource;
     private bool audioSequenceStarted;
@@ -47,8 +55,6 @@ public class GameIntro : MonoBehaviour
         GameState.IsUIOpen = false;
         GameState.Archive.Clear();
 
-        paperTexture = PaperUtil.MakePaperTexture(512, 384);
-
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
@@ -63,19 +69,9 @@ public class GameIntro : MonoBehaviour
             if (timer >= delayBeforeLetter)
             {
                 letterArrived = true;
+                SpawnEnvelope();
             }
             return;
-        }
-
-        // Deliberately E-only, not click: the player may want to click other things
-        // (like starting music on the gramophone) before opening the letter.
-        if (!isReading && !GameState.AnnaLetterRead && !GameState.IsUIOpen)
-        {
-            bool pressedE = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
-            if (pressedE)
-            {
-                OpenLetter();
-            }
         }
 
         if (isReading && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
@@ -89,6 +85,26 @@ public class GameIntro : MonoBehaviour
         {
             bloodySundayImageTimer -= Time.deltaTime;
         }
+    }
+
+    void SpawnEnvelope()
+    {
+        if (envelopePrefab == null) return;
+
+        GameObject instance = Instantiate(envelopePrefab);
+        envelope = instance.GetComponent<EnvelopeLetter>();
+        if (envelope == null) envelope = instance.AddComponent<EnvelopeLetter>();
+        envelope.OnPickedUp += OpenLetter;
+
+        // A slight tilt and yaw so it reads as a letter that was shoved under the door and
+        // landed at an angle, rather than a flat decal sitting exactly on the floor plane
+        // (which was clipping/z-fighting with it at the old, nearly-zero height).
+        instance.transform.rotation = Quaternion.Euler(4f, 20f, 3f);
+
+        // Slides from just outside the door threshold to just inside the room, along the floor.
+        Vector3 from = new Vector3(0f, 0.05f, -3.05f);
+        Vector3 to = new Vector3(0f, 0.05f, -2.5f);
+        envelope.BeginDelivery(from, to);
     }
 
     void UpdateAudioSequence()
@@ -144,10 +160,19 @@ public class GameIntro : MonoBehaviour
         audioSource.Play();
     }
 
+    // Called when crossing into the dream -- Anna's voice has no business following Stanislav there.
+    public void StopLetterAudio()
+    {
+        if (audioSource != null) audioSource.Stop();
+        audioSequenceStarted = false;
+        currentAudioPart = -1;
+    }
+
     void OpenLetter()
     {
         isReading = true;
         GameState.IsUIOpen = true;
+        LetterReaderUI.ResetReveal(readerState);
 
         GameObject player = GameObject.Find("Player");
         fpm = player != null ? player.GetComponent<FirstPersonMove>() : null;
@@ -155,7 +180,6 @@ public class GameIntro : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        PaperUtil.ShowPaperCursor();
 
         if (!audioSequenceStarted && currentAudioPart < 0)
         {
@@ -177,7 +201,6 @@ public class GameIntro : MonoBehaviour
         if (fpm != null) fpm.canLook = true;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        PaperUtil.ShowDefaultCursor();
     }
 
     void OnGUI()
@@ -185,34 +208,9 @@ public class GameIntro : MonoBehaviour
         PaperUtil.EnsureNoScrollbarHover();
         if (!letterArrived) return;
 
-        if (!isReading)
+        if (isReading)
         {
-            if (!GameState.AnnaLetterRead)
-            {
-                GUI.Label(new Rect(Screen.width / 2 - 220, Screen.height - 45, 440, 30),
-                    "A letter has been slipped under the door. (Press E to read)", PaperUtil.PromptStyle());
-            }
-        }
-        else
-        {
-            float panelWidth = 640f;
-            float panelHeight = 560f;
-            Rect panel = new Rect(Screen.width / 2 - panelWidth / 2, Screen.height / 2 - panelHeight / 2, panelWidth, panelHeight);
-            GUI.DrawTexture(panel, paperTexture);
-
-            Rect viewRect = new Rect(panel.x + 35, panel.y + 25, panel.width - 70, panel.height - 100);
-            GUIStyle bodyStyle = PaperUtil.InkStyle(17);
-            float textHeight = bodyStyle.CalcHeight(new GUIContent(AnnaLetter), viewRect.width - 20);
-            Rect contentRect = new Rect(0, 0, viewRect.width - 20, Mathf.Max(viewRect.height, textHeight + 20));
-
-            scroll = GUI.BeginScrollView(viewRect, scroll, contentRect);
-            GUI.Label(new Rect(0, 0, contentRect.width, contentRect.height), AnnaLetter, bodyStyle);
-            GUI.EndScrollView();
-
-            if (PaperUtil.FlatButton(new Rect(panel.x + panel.width / 2f - 75, panel.y + panel.height - 55, 150, 36), "Fold letter away"))
-            {
-                CloseLetter();
-            }
+            LetterReaderUI.Draw(readerState, AnnaTitle, AnnaLetter, annaLetterPaper, translationParchment);
         }
 
         // Drawn last so it sits fully on top of the letter, fullscreen, with a fade transition in and out.

@@ -51,6 +51,9 @@ public class TypewriterInteract : MonoBehaviour
 
     void Update()
     {
+        // It's a dream -- you can't sit down and write a letter in it.
+        if (GameState.IsDreaming) { lookingAtTypewriter = false; return; }
+
         if (!isWriting)
         {
             lookingAtTypewriter = CheckGaze();
